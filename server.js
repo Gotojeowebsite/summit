@@ -62,7 +62,7 @@ const server = http.createServer((req, res) => {
     const target = requestUrl.searchParams.get("target") || DEFAULT_LOGIN_URL;
     if (!isSafeRedirectTarget(target)) {
       res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end("Invalid URL. Only HTTPS URLs are allowed.");
+      res.end("Invalid URL. Only HTTPS URLs on summitk12.com are allowed.");
       return;
     }
 
@@ -72,7 +72,8 @@ const server = http.createServer((req, res) => {
   }
 
   const filePath = resolveRequestedPath(requestUrl.pathname);
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  const relativePath = path.relative(PUBLIC_DIR, filePath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Forbidden");
     return;
