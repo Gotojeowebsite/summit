@@ -1,0 +1,13 @@
+{
+  "name": "summit-launcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Codespaces-ready Summit K12 login launcher UI",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Summit K12 Launcher</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Summit K12 Launcher</h1>
+      <p>Start Summit K12 login when you need it.</p>
+
+      <form id="launch-form" action="/launch" method="GET">
+        <label for="target">Summit login URL</label>
+        <input
+          id="target"
+          name="target"
+          type="url"
+          required
+          value="https://www.summitk12.com/login"
+          placeholder="https://www.summitk12.com/login"
+        />
+
+        <button type="submit">Open Summit Login</button>
+      </form>
+
+      <p class="note">You will sign in directly on Summit K12.</p>
+    </main>
+  </body>
+</html>
