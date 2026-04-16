@@ -35,11 +35,15 @@ function sendFile(res, filePath) {
 
 function resolveRequestedPath(urlPathname) {
   if (urlPathname === "/") {
-    return path.join(PUBLIC_DIR, "index.html");
+    return { filePath: path.join(PUBLIC_DIR, "index.html") };
   }
 
-  const decoded = decodeURIComponent(urlPathname).replace(/^[/\\]+/, "");
-  return path.resolve(PUBLIC_DIR, decoded);
+  try {
+    const decoded = decodeURIComponent(urlPathname).replace(/^[/\\]+/, "");
+    return { filePath: path.resolve(PUBLIC_DIR, decoded) };
+  } catch {
+    return { error: "Malformed URL path." };
+  }
 }
 
 function isSafeRedirectTarget(value) {
@@ -71,7 +75,14 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const filePath = resolveRequestedPath(requestUrl.pathname);
+  const pathResult = resolveRequestedPath(requestUrl.pathname);
+  if (pathResult.error) {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end(pathResult.error);
+    return;
+  }
+
+  const { filePath } = pathResult;
   const relativePath = path.relative(PUBLIC_DIR, filePath);
   if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
