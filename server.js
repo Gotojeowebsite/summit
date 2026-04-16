@@ -33,20 +33,23 @@ function sendFile(res, filePath) {
   });
 }
 
-function normalizeRequestedPath(urlPathname) {
+function resolveRequestedPath(urlPathname) {
   if (urlPathname === "/") {
     return path.join(PUBLIC_DIR, "index.html");
   }
 
-  const decoded = decodeURIComponent(urlPathname);
-  const normalized = path.normalize(decoded).replace(/^(\.\.[/\\])+/, "");
-  return path.join(PUBLIC_DIR, normalized);
+  const decoded = decodeURIComponent(urlPathname).replace(/^[/\\]+/, "");
+  return path.resolve(PUBLIC_DIR, decoded);
 }
 
 function isSafeRedirectTarget(value) {
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "https:";
+    const host = parsed.hostname.toLowerCase();
+    return (
+      parsed.protocol === "https:" &&
+      (host === "summitk12.com" || host.endsWith(".summitk12.com"))
+    );
   } catch {
     return false;
   }
@@ -68,7 +71,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const filePath = normalizeRequestedPath(requestUrl.pathname);
+  const filePath = resolveRequestedPath(requestUrl.pathname);
   if (!filePath.startsWith(PUBLIC_DIR)) {
     res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Forbidden");
