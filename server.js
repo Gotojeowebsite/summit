@@ -49,10 +49,10 @@ function resolveRequestedPath(urlPathname) {
 function isSafeRedirectTarget(value) {
   try {
     const parsed = new URL(value);
-    const host = parsed.hostname.toLowerCase();
+    const targetHost = parsed.hostname.toLowerCase();
     return (
       parsed.protocol === "https:" &&
-      (host === "summitk12.com" || host.endsWith(".summitk12.com"))
+      (targetHost === "summitk12.com" || targetHost.endsWith(".summitk12.com"))
     );
   } catch {
     return false;
@@ -83,8 +83,12 @@ const server = http.createServer((req, res) => {
   }
 
   const { filePath } = pathResult;
-  const relativePath = path.relative(PUBLIC_DIR, filePath);
-  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+  const normalizedPublicDir = path.resolve(PUBLIC_DIR);
+  const normalizedFilePath = path.resolve(filePath);
+  const withinPublicDir =
+    normalizedFilePath === normalizedPublicDir ||
+    normalizedFilePath.startsWith(`${normalizedPublicDir}${path.sep}`);
+  if (!withinPublicDir) {
     res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Forbidden");
     return;
