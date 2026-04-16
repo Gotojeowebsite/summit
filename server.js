@@ -7,6 +7,9 @@ const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DEFAULT_LOGIN_URL = "https://www.summitk12.com/login";
+const LAUNCH_WINDOW_MS = 60_000;
+const LAUNCH_MAX_REQUESTS = 60;
+const launchRequestBuckets = new Map();
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -40,10 +43,26 @@ function resolveRequestedPath(urlPathname) {
 
   try {
     const decoded = decodeURIComponent(urlPathname).replace(/^[/\\]+/, "");
+    const segments = decoded.split(/[/\\]+/).filter(Boolean);
+    if (segments.includes("..")) {
+      return { error: "Malformed URL path." };
+    }
     return { filePath: path.resolve(PUBLIC_DIR, decoded) };
   } catch {
     return { error: "Malformed URL path." };
   }
+}
+
+function isLaunchRequestAllowed(clientKey) {
+  const now = Date.now();
+  const existing = launchRequestBuckets.get(clientKey);
+  if (!existing || now - existing.windowStart > LAUNCH_WINDOW_MS) {
+    launchRequestBuckets.set(clientKey, { windowStart: now, count: 1 });
+    return true;
+  }
+
+  existing.count += 1;
+  return existing.count <= LAUNCH_MAX_REQUESTS;
 }
 
 function isSafeRedirectTarget(value) {
@@ -63,6 +82,13 @@ const server = http.createServer((req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
   if (requestUrl.pathname === "/launch") {
+    const clientKey = req.socket.remoteAddress || "unknown";
+    if (!isLaunchRequestAllowed(clientKey)) {
+      res.writeHead(429, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Too many requests. Please try again later.");
+      return;
+    }
+
     const target = requestUrl.searchParams.get("target") || DEFAULT_LOGIN_URL;
     if (!isSafeRedirectTarget(target)) {
       res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
